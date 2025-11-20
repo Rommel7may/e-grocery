@@ -4,6 +4,7 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\OrderHistoryController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -17,6 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::resource('products', ProductController::class);
+    Route::resource('order-history', OrderHistoryController::class);
 });
 
 require __DIR__.'/settings.php';
