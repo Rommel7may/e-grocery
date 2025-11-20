@@ -36,25 +36,22 @@ import { BookOpen, Folder, LayoutGrid, Menu, Search, Shirt } from 'lucide-react'
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
-const adminNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'All Products',
-        href: '/products',
-        icon: Shirt,
-    },
-];
-
-const userNavItems: NavItem[] = [
+const mainNavItems: NavItem[] = [
     {
         title: 'Products',
         href: '/products',
         icon: Shirt,
-    }
+    },
+    {
+        title: 'Cart',
+        href: '',
+        icon: Shirt,
+    },
+    {
+        title: 'Order History',
+        href: '',
+        icon: Shirt,
+    },
 ];
 
 const rightNavItems: NavItem[] = [
@@ -110,11 +107,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 <div className="flex h-full flex-1 flex-col space-y-4 p-4">
                                     <div className="flex h-full flex-col justify-between text-sm">
                                         <div className="flex flex-col space-y-4">
-                                            
-
-                                            {auth.user.role == 'admin' ? 
-                                                
-                                            adminNavItems.map((item) => (
+                                            {mainNavItems.map((item) => (
                                                 <Link
                                                     key={item.title}
                                                     href={item.href}
@@ -128,27 +121,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                                     )}
                                                     <span>{item.title}</span>
                                                 </Link>
-                                            ))
-                                                
-                                            : 
-                                            
-                                            userNavItems.map((item) => (
-                                                <Link
-                                                    key={item.title}
-                                                    href={item.href}
-                                                    className="flex items-center space-x-2 font-medium"
-                                                >
-                                                    {item.icon && (
-                                                        <Icon
-                                                            iconNode={item.icon}
-                                                            className="h-5 w-5"
-                                                        />
-                                                    )}
-                                                    <span>{item.title}</span>
-                                                </Link>
-                                            ))
-                                            
-                                            }
+                                            ))}
                                         </div>
 
                                         <div className="flex flex-col space-y-4">
@@ -188,10 +161,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     <div className="ml-6 hidden h-full items-center space-x-6 lg:flex">
                         <NavigationMenu className="flex h-full items-stretch">
                             <NavigationMenuList className="flex h-full items-stretch space-x-2">
-
-                                {auth.user.role == 'admin' ? 
-                                (
-                                    adminNavItems.map((item, index) => (
+                                {mainNavItems.map((item, index) => (
                                     <NavigationMenuItem
                                         key={index}
                                         className="relative flex h-full items-center"
@@ -219,41 +189,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
                                         )}
                                     </NavigationMenuItem>
-                                ))
-                                )
-                                : 
-                                (
-                                    userNavItems.map((item, index) => (
-                                    <NavigationMenuItem
-                                        key={index}
-                                        className="relative flex h-full items-center"
-                                    >
-                                        <Link
-                                            href={item.href}
-                                            className={cn(
-                                                navigationMenuTriggerStyle(),
-                                                isSameUrl(
-                                                    page.url,
-                                                    item.href,
-                                                ) && activeItemStyles,
-                                                'h-9 cursor-pointer px-3',
-                                            )}
-                                        >
-                                            {item.icon && (
-                                                <Icon
-                                                    iconNode={item.icon}
-                                                    className="mr-2 h-4 w-4"
-                                                />
-                                            )}
-                                            {item.title}
-                                        </Link>
-                                        {isSameUrl(page.url, item.href) && (
-                                            <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
-                                        )}
-                                    </NavigationMenuItem>
-                                ))
-                                )
-                                }
+                                ))}
                             </NavigationMenuList>
                         </NavigationMenu>
                     </div>
