@@ -13,6 +13,12 @@ class ProductController extends Controller
      */
     public function index()
     {
+        if(auth()->user()->role == 'admin'){
+            $products = Product::all();
+
+            return Inertia::render('manage-products', compact('products'));
+        }
+
         return Inertia::render('products');
     }
 
@@ -21,7 +27,7 @@ class ProductController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render('add-product');
     }
 
     /**
@@ -29,8 +35,29 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        //
+         // Validate inputs
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:5120', // 5MB
+        ]);
+
+        $data = $request->only('name', 'description', 'price', 'stock');
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('products', 'public'); // stores in storage/app/public/products
+            $data['image'] = $path;
+        }
+
+        Product::create($data);
+
+        return redirect()->route('products.index')
+            ->with('success', 'Product created successfully!');
     }
+
 
     /**
      * Display the specified resource.

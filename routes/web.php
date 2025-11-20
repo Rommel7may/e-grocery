@@ -19,8 +19,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('products', ProductController::class);
     Route::resource('order-history', OrderHistoryController::class);
+
+    Route::resource('manage-users', UsersController::class);
 });
 
-Route::resource('manage-users', UsersController::class);
+
 
 require __DIR__.'/settings.php';
