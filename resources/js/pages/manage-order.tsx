@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Head, router, usePage } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import {
   ColumnDef,
   SortingState,
@@ -23,7 +23,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -38,8 +37,25 @@ import {
 import AppLayout from "@/layouts/app-layout";
 import { Badge } from "@/components/ui/badge";
 
-export default function ManageOrder({ orders }: { orders: any[] }) {
-  const columns: ColumnDef<typeof orders[0]>[] = [
+// Define proper TypeScript types for orders
+interface User {
+  name: string;
+  email: string;
+}
+
+interface Order {
+  id: number;
+  user?: User;
+  total_amount: number;
+  status: "pending" | "accepted" | "received" | "failed";
+}
+
+interface ManageOrderProps {
+  orders: Order[];
+}
+
+export default function ManageOrder({ orders }: ManageOrderProps) {
+  const columns: ColumnDef<Order>[] = [
     {
       id: "select",
       header: ({ table }) => (
@@ -65,24 +81,25 @@ export default function ManageOrder({ orders }: { orders: any[] }) {
       cell: ({ row }) => row.getValue("id"),
     },
     {
-    accessorKey: "user",
+    id: "user_name",
     header: "User",
     accessorFn: (row) => row.user?.name ?? "No name",
-    cell: ({ getValue }) => <span>{getValue() as string}</span>,
+    cell: ({ getValue }) => <span>{getValue() as any}</span>,
     },
     {
-    accessorKey: "email",
+    id: "user_email",
     header: "Email",
     accessorFn: (row) => row.user?.email ?? "No email",
-    cell: ({ getValue }) => <span>{getValue() as string}</span>,
+    cell: ({ getValue }) => <span>{getValue() as any}</span>,
     },
+
     {
       accessorKey: "total_amount",
       header: "Amount",
       cell: ({ row }) => {
-        const formattedAmount = new Intl.NumberFormat("en-US", {
+        const formattedAmount = new Intl.NumberFormat("en-PH", {
           style: "currency",
-          currency: "php",
+          currency: "PHP",
         }).format(row.getValue("total_amount"));
         return <div className="text-left">{formattedAmount}</div>;
       },
@@ -92,7 +109,7 @@ export default function ManageOrder({ orders }: { orders: any[] }) {
       header: "Status",
       cell: ({ row }) => {
         const status = row.getValue("status");
-        let color = "text-gray-500"; // default color
+        let color = "text-gray-500";
         switch (status) {
           case "pending":
             color = "text-yellow-500";
@@ -106,13 +123,12 @@ export default function ManageOrder({ orders }: { orders: any[] }) {
           case "failed":
             color = "text-red-500";
             break;
-        } ""
-
+        }
         return (
-                <Badge className="rounded-sm" variant="outline">
-                    <div className={`capitalize font-medium ${color}`}>{status as string}</div>
-                </Badge>
-            )
+          <Badge className="rounded-sm" variant="outline">
+            <div className={`capitalize font-medium ${color}`}>{status as any}</div>
+          </Badge>
+        );
       },
     },
     {
@@ -129,24 +145,22 @@ export default function ManageOrder({ orders }: { orders: any[] }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              {order.status === 'pending' && (
-                <DropdownMenuItem 
-                onClick={() => {
+              {order.status === "pending" && (
+                <DropdownMenuItem
+                  onClick={() =>
                     router.patch(`/order/${order.id}`, {
-                        status: "accepted",
-                    });
-                    }}
-                    >
-                    Mark as Accepted
+                      status: "accepted",
+                    })
+                  }
+                >
+                  Mark as Accepted
                 </DropdownMenuItem>
-              )
-            }
-                <DropdownMenuItem 
-                onClick={() => {
-                router.visit(`/order/${order.id}`);
-                }}>
-                    View Order
-                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                onClick={() => router.visit(`/order/${order.id}`)}
+              >
+                View Order
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -175,90 +189,100 @@ export default function ManageOrder({ orders }: { orders: any[] }) {
 
   return (
     <AppLayout>
-        <Head title='Manage Order'/>
-        <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+      <Head title="Manage Orders" />
+      <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
         <div className="flex justify-between">
-            <Input
+          <Input
             placeholder="Search orders"
             value={(table.getColumn("id")?.getFilterValue() as string) ?? ""}
-            onChange={(event) => table.getColumn("id")?.setFilterValue(event.target.value)}
+            onChange={(e) => table.getColumn("id")?.setFilterValue(e.target.value)}
             className="max-w-sm"
-            />
-            <DropdownMenu>
+          />
+          <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto">
+              <Button variant="outline" className="ml-auto">
                 Columns <ChevronDown />
-                </Button>
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                {table
+              {table
                 .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => (
-                    <DropdownMenuCheckboxItem
-                    key={column.id}
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                .filter((col) => col.getCanHide())
+                .map((col) => (
+                  <DropdownMenuCheckboxItem
+                    key={col.id}
+                    checked={col.getIsVisible()}
+                    onCheckedChange={(val) => col.toggleVisibility(!!val)}
                     className="capitalize"
-                    >
-                    {column.id}
-                    </DropdownMenuCheckboxItem>
+                  >
+                    {col.id}
+                  </DropdownMenuCheckboxItem>
                 ))}
             </DropdownMenuContent>
-            </DropdownMenu>
+          </DropdownMenu>
         </div>
 
         <div className="overflow-hidden rounded-md border">
-            <Table>
+          <Table>
             <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
+              {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
+                  {headerGroup.headers.map((header) => (
                     <TableHead key={header.id}>
-                        {header.isPlaceholder
+                      {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
-                    ))}
+                  ))}
                 </TableRow>
-                ))}
+              ))}
             </TableHeader>
             <TableBody>
-                {table.getRowModel().rows.length ? (
+              {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                     {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
+                      <TableCell key={cell.id}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
+                      </TableCell>
                     ))}
-                    </TableRow>
+                  </TableRow>
                 ))
-                ) : (
+              ) : (
                 <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
                     No results.
-                    </TableCell>
+                  </TableCell>
                 </TableRow>
-                )}
+              )}
             </TableBody>
-            </Table>
+          </Table>
         </div>
 
         <div className="flex items-center justify-end space-x-2 py-4">
-            <div className="text-muted-foreground flex-1 text-sm">
+          <div className="text-muted-foreground flex-1 text-sm">
             {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s) selected.
-            </div>
-            <div className="space-x-2">
-            <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-                Previous
+          </div>
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
             </Button>
-            <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-                Next
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
             </Button>
-            </div>
+          </div>
         </div>
-        </div>
+      </div>
     </AppLayout>
   );
 }
