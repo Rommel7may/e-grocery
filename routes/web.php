@@ -14,30 +14,34 @@ use App\Http\Controllers\OrderHistoryController;
 
 
 Route::get('/', function () {
-    return Inertia::render('welcome', [
-        'canRegister' => Features::enabled(Features::registration()),
-    ]);
+    if(auth()->check() && auth()->user()->role === 'admin'){
+        return redirect()->route('dashboard');
+    }
+    
+    return redirect()->route('products.index');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
+
+    Route::middleware('role:admin')->group(function () {
+        Route::get('dashboard', function () {
 
         $sales = Product::where('sales', '>', 0)->orderBy('sales', 'desc')->take(5)->get();
 
         return Inertia::render('dashboard', compact('sales'));
-    })->name('dashboard');
-
+        })->name('dashboard');
+        
+        Route::resource('manage-users', UsersController::class);
+        Route::resource('manageUser', ManageUserController::class);
+    });
+    
     Route::resource('products', ProductController::class);
     Route::resource('order-history', OrderHistoryController::class);
 
-    Route::resource('manage-users', UsersController::class);
     Route::resource('cart', CartController::class);
 
     Route::resource('order', OrderController::class);
-    
-    Route::resource('manageUser', ManageUserController::class);
-
-    
+        
 });
 
 
