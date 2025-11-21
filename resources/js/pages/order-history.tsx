@@ -22,11 +22,13 @@ import {
 } from "@/components/ui/table";
 
 import { ChevronRight, ArrowUpDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export type OrderType = {
   id: number;
   total_amount: number;
   created_at: string;
+  status: string;
 };
 
 export default function OrderHistory() {
@@ -65,6 +67,42 @@ export default function OrderHistory() {
         </Button>
       ),
       cell: ({ row }) => <div className="ml-3">{row.getValue("created_at")}</div>,
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="ml-auto"
+        >
+          Status
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const status = row.getValue("status");
+        let color = "text-gray-500"; // default color
+        switch (status) {
+          case "pending":
+            color = "text-yellow-500";
+            break;
+          case "accepted":
+            color = "text-green-500";
+            break;
+          case "received":
+            color = "text-blue-500";
+            break;
+          case "failed":
+            color = "text-red-500";
+            break;
+        } 
+        return (
+               <Badge className="rounded-sm ml-3" variant="outline">
+                   <div className={`capitalize font-medium ${color}`}>{status as string}</div>
+               </Badge>
+           )
+      }
     },
     {
       accessorKey: "total_amount",

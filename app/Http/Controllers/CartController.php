@@ -85,8 +85,6 @@ class CartController extends Controller
 
         $cart->delete();
 
-        return response()->json([
-            'message' => 'Item removed from cart',
-        ]);
+        return back()->with('success', 'Item removed from cart.');
     }
 }

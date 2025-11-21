@@ -98,7 +98,7 @@ export default function ShowProduct({ product }: ShowProductProps) {
                 <FieldLegend>Pricing & Stock</FieldLegend>
                 <div className="mb-2">
                   <FieldLabel>Price</FieldLabel>
-                  <Input value={`$${product.price}`} readOnly />
+                  <Input value={`₱${product.price}`} readOnly />
                 </div>
                 <div>
                   <FieldLabel>Stock</FieldLabel>

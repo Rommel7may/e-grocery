@@ -5,9 +5,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
-import { type BreadcrumbItem } from '@/types';
+import { Product, type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -17,7 +18,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Dashboard() {
+export default function Dashboard({sales}: {sales: Product[]}) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
@@ -70,11 +71,34 @@ export default function Dashboard() {
                 </div>
 
                 {/* Main Analytics / Chart Section */}
-                <div className="relative flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+                <div className="relative flex-1 overflow-hidden rounded-xl grid grid-cols-3 gap-4">
                     {/* Replace this with your actual chart component */}
-                    <p className="text-center text-muted-foreground">
-                        Chart
-                    </p>
+                    <Card className='col-span-2'>
+                        <CardHeader>
+                            <CardTitle>Sales Statistics</CardTitle>
+                        </CardHeader>
+                    </Card>
+                    <Card className='gap-2'>
+                        <CardHeader>
+                            <CardTitle>Top Products</CardTitle>
+                        </CardHeader>
+                        <CardContent >
+                            <div  className='space-y-2'>
+                            {sales.map((sale) => (
+                                <Card className='p-0'>
+                                    <CardContent className='grid grid-cols-[auto_1fr_auto] p-2 gap-2 justify-center items-center    '>
+                                        {sale.image ? <img src={`/storage/${sale.image}`} alt={sale.name} className="w-15 h-15 rounded-lg" /> : <PlaceholderPattern className="w-15 h-15 bg-zinc-300 rounded-lg" />}
+                                        <div className=''>
+                                            <h3 className='text-base'>{sale.name}</h3>
+                                            <p className='text-zinc-500 text-xs'>{sale.sales} Sold</p>
+                                        </div>
+                                        <p className='font-medium text-sm'>₱{(sale.sales * sale.price).toFixed(2)}</p>
+                                    </CardContent>    
+                                </Card>
+                            ))}
+                           </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </AppLayout>

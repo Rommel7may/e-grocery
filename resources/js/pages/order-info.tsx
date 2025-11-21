@@ -1,12 +1,22 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlaceholderPattern } from "@/components/ui/placeholder-pattern";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import AppLayout from "@/layouts/app-layout";
 import { Head, router } from "@inertiajs/react";
-import { CheckCircle, ChevronLeft, CircleCheck, CreditCard, Pen, Printer, SquarePen, TruckIcon } from "lucide-react";
+import { CheckCircle, ChevronLeft, CircleCheck, CreditCard, SquarePen, TruckIcon } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Product {
   id: number;
@@ -34,31 +44,70 @@ interface Order {
   shipping: number;
   total: number;
   shipped_at?: string;
+  status: "pending" | "accepted" | "received" | "delivered";
 }
 
 interface Props {
-  order?: Order; // optional
+  order?: Order;
 }
 
 export default function OrderDetail({ order }: Props) {
-  // Calculate progress
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const progressMap: Record<string, number> = {
-    processing: 0,
-    shipped: 33.5,
-    out_for_delivery: 65.5,
-    delivered: 100,
+    pending: 2.3,
+    accepted: 50,
+    received: 100,
+  };
+
+  const statusLabelMap: Record<string, string> = {
+    pending: "Pending",
+    accepted: "Accepted",
+    received: "Received",
+  };
+
+  // Handler for marking as received
+  const handleMarkAsReceived = () => {
+    if (!order) return;
+
+    router.patch(`/order/${order.id}`, { status: "received" }, {
+      onSuccess: () => setIsDialogOpen(false),
+    });
   };
 
   return (
     <AppLayout>
-      <Head title={order ? `Order #₱{order.order_number}` : "Order #123"} />
+      <Head title={order ? `Order #${order.order_number}` : "Order #123"} />
       <div className="max-w-5xl mx-auto w-full py-6 space-y-6">
         {/* ACTION BUTTONS */}
         <div className="flex justify-between">
-          <Button variant="outline" className="pl-0" onClick={() => router.visit('/products')}>
+          <Button variant="outline" className="pl-0" onClick={() => router.visit("/products")}>
             <ChevronLeft />
           </Button>
-          
+
+          {order?.status === "accepted" && (
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="secondary">Received</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Mark as Received</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to mark this order as received? This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button variant="secondary" onClick={handleMarkAsReceived}>
+                    Yes, Received
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {/* ORDER INFO */}
@@ -99,10 +148,13 @@ export default function OrderDetail({ order }: Props) {
             </CardHeader>
             <CardContent className="flex justify-between flex-col gap-6">
               <div className="flex justify-between">
-                <p>Payment</p>
-                <p>Paid</p>
+                <div>
+                  <p>Status</p>
+                  <p className="text-xs text-zinc-500">Please wait for admin to accept the order approval</p>
+                </div>
+                <p className="capitalize">{statusLabelMap[order?.status ?? "pending"]}</p>
               </div>
-              <Separator/>
+              <Separator />
               <div className="flex justify-between">
                 <p>Subtotal</p>
                 <p>₱{order?.subtotal.toFixed(2) ?? "101.97"}</p>
@@ -119,6 +171,48 @@ export default function OrderDetail({ order }: Props) {
             </CardContent>
           </Card>
         </div>
+
+        {/* Delivery Status */}
+        <Card className="p-4">
+          <CardTitle>Delivery Status</CardTitle>
+          <div className="space-y-2">
+            <div className="flex justify-between text-white text-xs">
+              {/* Status Icons */}
+              <div className="flex flex-col items-center gap-2">
+                <div className={`border p-3 rounded-full ${order?.status === "pending" || order?.status === "accepted" || order?.status === "received" || order?.status === "delivered" ? "bg-green-800" : ""}`}>
+                  <CheckCircle className="size-5" />
+                </div>
+                <p>Pending</p>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className={`border p-3 rounded-full ${order?.status === "accepted" || order?.status === "received" || order?.status === "delivered" ? "bg-green-800" : ""}`}>
+                  <TruckIcon className="size-5" />
+                </div>
+                <p>Accepted</p>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className={`border p-3 rounded-full ${order?.status === "received" || order?.status === "delivered" ? "bg-green-800" : ""}`}>
+                  <CircleCheck className="size-5" />
+                </div>
+                <p>Received</p>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <Progress value={progressMap[order?.status ?? "pending"]} className="transition ease-in-out" />
+
+            <div className="mt-4 space-x-2">
+              <Badge className="bg-blue-500/30 border border-blue-500 text-white">
+                {statusLabelMap[order?.status ?? "pending"]}
+              </Badge>
+              <span className="text-xs text-zinc-500">
+                {order?.status === 'pending' ? "Not yet shipped" 
+                : order?.status === 'accepted' ? "On the way" 
+                : order?.status === 'received' && "Delivered"}
+              </span>
+            </div>
+          </div>
+        </Card>
 
         {/* Order Items */}
         <Card className="py-4">

@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/dialog"
 
 import { toast } from "sonner"
+import { PlaceholderPattern } from "@/components/ui/placeholder-pattern"
 
 interface Product {
   id: number
@@ -126,7 +127,23 @@ export default function ManageProduct({ products }: { products: Product[] }) {
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div className="font-medium ml-3">{row.getValue("name")}</div>,
+      cell: ({ row }) => {
+        const product = row.original
+        return (
+          <div className="font-medium ml-3 flex gap-2 items-center overflow-hidden">
+            {product.image ? (
+              <img
+                src={`/storage/${product.image}`}
+                alt={product.name}
+                className="h-15 w-15 object-cover rounded-lg "
+              />
+            ):(
+              <PlaceholderPattern className="w-15 h-15 bg-white rounded-lg "/>
+            )}
+            <p>{product.name}</p>
+            </div>
+        )
+      } 
     },
     {
       accessorKey: "price",

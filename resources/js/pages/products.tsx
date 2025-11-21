@@ -11,21 +11,10 @@ import { Apple, Candy, Croissant, CupSoda, Drumstick, Fish, Milk, MinusIcon, Pil
 import { toast } from "sonner";
 import { PlaceholderPattern } from "@/components/ui/placeholder-pattern";
 import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group";
-import { SharedData } from "@/types";
+import { CartItem, Product, SharedData } from "@/types";
 
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  image?: string | null;
-  category: string;
-}
-
-interface CartItem {
-  id: number;
-  quantity: number;
-  product: Product;
-}
+// ShadCN UI imports
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const categories = [
   { name: "Fruits & Vegetables", icon: Apple },
@@ -38,14 +27,16 @@ const categories = [
   { name: "Grains & Pasta", icon: Wheat },
   { name: "Frozen Foods", icon: Snowflake },
   { name: "Condiments & Spices", icon: PillBottle },
-]
-
+];
 
 export default function Products({ carts, products }: { carts: CartItem[], products: Product[] }) {
   const [cart, setCart] = useState<CartItem[]>(carts || []);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  
+
+  // Dialog state
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [itemToRemove, setItemToRemove] = useState<CartItem | null>(null);
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -53,13 +44,11 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
     return matchesSearch && matchesCategory;
   });
 
-
   const handleView = (product: Product) => {
     router.visit(`/products/${product.id}`);
   };
 
   const handleAddToCart = (product: Product) => {
-    // Update local state
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
@@ -72,13 +61,24 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
       return [...prev, { id: Date.now(), product, quantity: 1 }];
     });
 
-    // Post to backend
-    router.post('/cart', { product_id: product.id });
+    // Post to backend — use Inertia callback instead of .then (router.post returns void)
+    router.post('/cart', { product_id: product.id }, {
+      onSuccess: () => {
+        setTimeout(() => {
+        window.location.reload();
+      }, 500);   
+      },
+    });
+  };
+
+  const handleRemoveItem = (item: CartItem) => {
+    setCart((prev) => prev.filter((i) => i.id !== item.id));
+    router.delete(`/cart/${item.id}`);
+    setIsDialogOpen(false); // Close the dialog after confirming
   };
 
   const page = usePage<SharedData>();
   const { auth } = page.props;
-
 
   return (
     <AppLayout>
@@ -93,7 +93,7 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
                 placeholder="Search..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                />
+              />
               <InputGroupAddon>
                 <Search />
               </InputGroupAddon>
@@ -101,29 +101,28 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
             </InputGroup>
 
             {/* Categories placeholder */}
-            <ScrollArea className="w-full rounded-md ">
-            <div className="flex w-max space-x-4 pb-4">
-              {categories.map((item, i) => {
-                const Icon = item.icon
-                return (
-                  <Card
-                    key={i}
-                    className={`p-4 rounded-lg flex flex-col items-center justify-start w-28 h-28 cursor-pointer transition shrink-0 gap-0
-                    ${selectedCategory === item.name ? 'bg-zinc-900' : 'hover:bg-zinc-800'}`}
-                    onClick={() => setSelectedCategory(selectedCategory === item.name ? null : item.name)}
-                  >
-                    <Icon className="size-10 text-white shrink-0" />
+            <ScrollArea className="w-full rounded-md">
+              <div className="flex w-max space-x-4 pb-4">
+                {categories.map((item, i) => {
+                  const Icon = item.icon;
+                  return (
+                    <Card
+                      key={i}
+                      className={`p-4 rounded-lg flex flex-col items-center justify-start w-28 h-28 cursor-pointer transition shrink-0 gap-0
+                      ${selectedCategory === item.name ? 'bg-zinc-900' : 'hover:bg-zinc-800'}`}
+                      onClick={() => setSelectedCategory(selectedCategory === item.name ? null : item.name)}
+                    >
+                      <Icon className="size-10 text-white shrink-0" />
 
-                    <span className="text-xs mt-2 text-center break-words">
-                      {item.name}
-                    </span>
-                  </Card>
-
-                )
-              })}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+                      <span className="text-xs mt-2 text-center break-words">
+                        {item.name}
+                      </span>
+                    </Card>
+                  );
+                })}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
 
             {/* Product Grid */}
             <div className="grid grid-cols-5 gap-2">
@@ -136,7 +135,6 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
                 <Card
                   key={product.id}
                   className="p-0 flex rounded-lg overflow-hidden gap-0 cursor-pointer"
-                 
                 >
                   {product.image ? (
                     <img
@@ -146,7 +144,7 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
                       onClick={() => handleView(product)}
                     />
                   ) : (
-                    <div className="min-h-30 h-30 w-full bg-gray-100" onClick={() => handleView(product)}/>
+                    <div className="min-h-30 h-30 w-full bg-gray-100" onClick={() => handleView(product)} />
                   )}
 
                   <div className="grid grid-cols-[1fr_auto] items-end p-2 w-full">
@@ -155,9 +153,8 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
                       <p className="text-sm text-gray-500">₱{product.price.toFixed(2)}</p>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => handleAddToCart(product)}>
-                        <ShoppingCart />
+                      <ShoppingCart />
                     </Button>
-
                   </div>
                 </Card>
               ))}
@@ -209,10 +206,8 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
                             variant="secondary"
                             onClick={() => {
                               if (item.quantity === 1) {
-                                setCart((prev) =>
-                                  prev.filter((i) => i.product.id !== item.product.id)
-                                );
-                                router.delete(`/cart/${item.id}`);
+                                setItemToRemove(item);  // Set the item to be removed
+                                setIsDialogOpen(true);  // Open the dialog
                               } else {
                                 setCart((prev) =>
                                   prev.map((i) =>
@@ -252,7 +247,11 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
                           </Button>
                         </ButtonGroup>
 
-                        <Button variant="destructive" size="icon-sm">
+                        {/* Remove button */}
+                        <Button variant="destructive" size="icon-sm" onClick={() => {
+                          setItemToRemove(item);
+                          setIsDialogOpen(true);
+                        }}>
                           <X />
                         </Button>
                       </div>
@@ -263,8 +262,7 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
             </CardContent>
 
             {cart.length > 0 && (
-                <CardFooter className="p-0 mt-auto bg-zinc-900 flex flex-col gap-2">
-              
+              <CardFooter className="p-0 mt-auto bg-zinc-900 flex flex-col gap-2">
                 <div className="flex justify-between p-2 w-full">
                   <span className="font-medium">Total:</span>
                   <span className="font-normal">
@@ -272,49 +270,50 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
                   </span>
                 </div>
 
-              <Button 
-                className="w-full"
-                onClick={() => {
-                  if (cart.length === 0) {
-                    toast.error("Cart is empty");
-                    return;
-                  }
-                  // Replace `user` with your actual user object passed to this component
-                  // if (!auth.user?.address) {
-                  //   toast.error(
-                  //     <span>
-                  //       Please add your address before checking out.
-                  //       <br/>
-                  //       <a
-                  //         href="/settings/profile"
-                  //         rel="noopener noreferrer"
-                  //         className="underline text-blue-600"
-                  //       >
-                  //         Click to add address.
-                  //       </a>
-                  //     </span>
-                  //   );
-                  //   return; // stop checkout
-                  // }
-
-                  // Proceed with checkout
-                  router.post("/order", {
-                    cart: cart.map((item) => ({
-                      product_id: item.product.id,
-                      quantity: item.quantity,
-                    })),
-                  });
-                }} 
-
+                <Button 
+                  className="w-full"
+                  onClick={() => {
+                    if (cart.length === 0) {
+                      toast.error("Cart is empty");
+                      return;
+                    }
+                    router.post("/order", {
+                      cart: cart.map((item) => ({
+                        product_id: item.product.id,
+                        quantity: item.quantity,
+                      })),
+                    });
+                  }}
                 >
-                Checkout
-              </Button>
-            </CardFooter>
+                  Checkout
+                </Button>
+              </CardFooter>
             )}
-            
           </Card>
         </div>
       </div>
+
+      {/* ShadCN Dialog for Confirmation */}
+      <Dialog open={isDialogOpen} onOpenChange={(open) => setIsDialogOpen(open)}>
+        <DialogContent>
+          <DialogTitle>Are you sure?</DialogTitle>
+          <DialogDescription>
+            This action cannot be undone. Are you sure you want to remove this item from your cart?
+          </DialogDescription>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={() => {
+              if (itemToRemove) {
+                handleRemoveItem(itemToRemove);
+              }
+            }}>
+              Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

@@ -1,15 +1,16 @@
 <?php
 
 use Inertia\Inertia;
+use App\Models\Product;
 use Laravel\Fortify\Features;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\ProductController;
-use App\Http\Controllers\OrderHistoryController;
 
 use App\Http\Controllers\ManageUserController;
+use App\Http\Controllers\OrderHistoryController;
 
 
 Route::get('/', function () {
@@ -20,7 +21,10 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+
+        $sales = Product::where('sales', '>', 0)->orderBy('sales', 'desc')->take(5)->get();
+
+        return Inertia::render('dashboard', compact('sales'));
     })->name('dashboard');
 
     Route::resource('products', ProductController::class);
@@ -33,6 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::resource('manageUser', ManageUserController::class);
 
+    
 });
 
 

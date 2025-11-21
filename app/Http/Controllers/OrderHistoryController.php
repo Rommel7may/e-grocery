@@ -26,6 +26,7 @@ class OrderHistoryController extends Controller
                     'id' => $order->id,
                     'total_amount' => $order->items->sum(fn($i) => $i->price * $i->quantity) + 10, // include shipping
                     'created_at' => $order->created_at->format('Y-m-d'),
+                    'status' => $order->status,
                 ];
             });
 
