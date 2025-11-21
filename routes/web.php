@@ -9,6 +9,9 @@ use App\Http\Controllers\UsersController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderHistoryController;
 
+use App\Http\Controllers\ManageUserController;
+
+
 Route::get('/', function () {
     return Inertia::render('welcome', [
         'canRegister' => Features::enabled(Features::registration()),
@@ -28,6 +31,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('order', OrderController::class);
     
+    Route::resource('manageUser', ManageUserController::class);
+
 });
 
 
