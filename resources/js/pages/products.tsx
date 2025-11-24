@@ -277,6 +277,17 @@ export default function Products({ carts, products }: { carts: CartItem[], produ
                       toast.error("Cart is empty");
                       return;
                     }
+                    if (!auth.user.address) {
+                      toast.error(
+                        <span>
+                          Please set your address in your profile before checking out. <br />
+                          <a href="/settings/profile" className="underline">
+                            Click here to update your address.
+                          </a>
+                        </span>
+                      );
+                      return;
+                    }
                     router.post("/order", {
                       cart: cart.map((item) => ({
                         product_id: item.product.id,

@@ -89,6 +89,25 @@ export default function Profile({
                                     />
                                 </div>
 
+                                <div className="grid gap-2">
+                                    <Label htmlFor="address">Address</Label>
+
+                                    <Input
+                                        id="address"
+                                        type="address"
+                                        className="mt-1 block w-full"
+                                        defaultValue={auth.user.address ?? ""}
+                                        name="address"
+                                        autoComplete="address"
+                                        placeholder="Address"
+                                    />
+
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.address}
+                                    />
+                                </div>
+
                                 {mustVerifyEmail &&
                                     auth.user.email_verified_at === null && (
                                         <div>
